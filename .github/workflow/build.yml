@@ -1,0 +1,63 @@
+name: Build APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Install system packages + add focal repo for ncurses
+        run: |
+          echo "deb http://security.ubuntu.com/ubuntu focal-security main universe" | sudo tee /etc/apt/sources.list.d/focal-security.list
+          sudo apt update
+          sudo apt install -y \
+            openjdk-17-jdk unzip zip git cmake \
+            python3-pip build-essential libffi-dev libssl-dev \
+            libsqlite3-dev zlib1g-dev libncurses5 libtinfo5 \
+            libtool automake autoconf m4 \
+            pkg-config libltdl-dev
+
+      - name: Install Android SDK build-tools 36.0.0
+        run: |
+          export ANDROID_HOME=$HOME/android-sdk
+          export PATH=$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH
+          mkdir -p "$ANDROID_HOME/cmdline-tools"
+          cd "$ANDROID_HOME/cmdline-tools"
+          wget https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip -O cmdline.zip
+          unzip cmdline.zip
+          mv cmdline-tools latest
+          yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager \
+            "platform-tools" \
+            "platforms;android-33" \
+            "build-tools;36.0.0"
+
+      - name: Set JAVA_HOME
+        run: |
+          echo "JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64" >> $GITHUB_ENV
+          echo "$JAVA_HOME/bin" >> $GITHUB_PATH
+
+      - name: Install Python + Buildozer deps
+        run: |
+          pip install --upgrade pip
+          pip install buildozer cython==0.29.33 pillow "kivy[base]"==2.3.0 --no-build-isolation
+
+      - name: Build APK with Buildozer
+        run: |
+          export ANDROIDSDK="$HOME/android-sdk"
+          yes | buildozer -v android debug
+
+      - name: List APK output (debug)
+        run: ls -lh bin/ || echo "No APK found"
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: spriteswitch-debug-apk
+          path: bin/*.apk
