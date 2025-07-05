@@ -90,7 +90,7 @@ class FolderChooserPopup(Popup):
         self.size_hint = (0.9, 0.9)
 
         layout = BoxLayout(orientation='vertical')
-        self.chooser = FileChooserListView(dirselect=True)
+        self.chooser = FileChooserListView(dirselect=True, path="/storage/emulated/0")
         layout.add_widget(self.chooser)
 
         btn_layout = BoxLayout(size_hint_y=None, height=50)
@@ -118,7 +118,7 @@ class JSONChooserPopup(Popup):
         self.size_hint = (0.9, 0.9)
 
         layout = BoxLayout(orientation='vertical')
-        self.chooser = FileChooserListView(filters=["*.json"])
+        self.chooser = FileChooserListView(filters=["*.json"], path="/storage/emulated/0")
         layout.add_widget(self.chooser)
 
         btn_layout = BoxLayout(size_hint_y=None, height=50)
@@ -138,7 +138,6 @@ class JSONChooserPopup(Popup):
         if self.chooser.selection:
             callback(self.chooser.selection[0])
             self.dismiss()
-
 class PNGToJSONScreen(Screen):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
